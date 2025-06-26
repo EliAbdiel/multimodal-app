@@ -9,14 +9,13 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain.memory import ConversationBufferMemory
+# from langchain.memory import ConversationBufferMemory
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.chains import ConversationalRetrievalChain
 
 
 load_dotenv(override=True)
 
-# if "GOOGLE_API_KEY" not in os.environ:
-#     os.environ["GOOGLE_API_KEY"] = getpass.getpass("xxxxxx")
 
 llm = ChatGoogleGenerativeAI(
     model=os.environ["GEMINI_MODEL"],
@@ -48,21 +47,37 @@ async def create_chain_retriever(texts: str, source_prefix: str) -> Conversation
                     google_api_key=os.environ["GEMINI_API_KEY"],
                 )
     docsearch = await cl.make_async(Chroma.from_texts)(texts, embeddings, metadatas=metadatas)
-    message_history = ChatMessageHistory()
+    # message_history = ChatMessageHistory()
     
-    memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        output_key="answer",
-        chat_memory=message_history,
-        return_messages=True)
+    # memory = ConversationBufferMemory(
+    #     memory_key="chat_history",
+    #     output_key="answer",
+    #     chat_memory=message_history,
+    #     return_messages=True)
   
     chain = ConversationalRetrievalChain.from_llm(
         llm,
         chain_type="stuff",
         retriever=docsearch.as_retriever(),
-        memory=memory,
+        # memory=memory,
         output_key="answer",
         return_source_documents=False 
         )
 
-    return chain
+    # Wrap the chain with message history capability
+    chain_with_history = RunnableWithMessageHistory(
+        chain,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="chat_history",
+        output_messages_key="answer"
+    )
+
+    return chain_with_history
+
+
+def get_session_history(session_id: str):
+    """Retrieves the chat history for a given session ID."""
+    if not cl.user_session.get("chat_history"):
+        cl.user_session.set("chat_history", ChatMessageHistory())
+    return cl.user_session.get("chat_history")

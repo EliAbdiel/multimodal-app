@@ -6,9 +6,9 @@ from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
 from process_user_files import handle_attachment
 from process_user_message import process_user_message
 from process_user_audios import process_audio_chunk, audio_answer
+from starter import select_starters
 from resume_chat import resume_chat
 from typing import Dict, Optional
-# from langchain.memory import ConversationBufferMemory
 
 
 load_dotenv(override=True)
@@ -30,16 +30,26 @@ async def on_chat_start():
     """
     try:
         # Initialize session variables
-        # cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
         cl.user_session.set("chain", None)
         cl.user_session.set("audio_buffer", None)
         cl.user_session.set("audio_mime_type", None)
         
-        await cl.Message(content="Welcome! I'm your multimodal AI assistant. You can send me text, audio, images, PDFs, or Word documents!").send()
+        # await cl.Message(content="Welcome! I'm your multimodal AI assistant. You can send me text, audio, images, PDFs, or Word documents!").send()
         
     except Exception as e:
         print(f"Error initializing chat: {e}")
         await cl.Message(content="Error initializing chat session. Please refresh and try again.").send()
+
+@cl.set_starters
+async def set_starters():
+    """
+    Sets up the initial conversation starters/suggestions that appear when a chat begins.
+    These starters help guide users on how to interact with the assistant.
+    
+    Returns:
+        list: A list of starter messages/suggestions from the select_starters() function
+    """
+    return await select_starters()
 
 
 @cl.on_audio_start
@@ -82,8 +92,6 @@ async def on_audio_end(elements: list = None) -> None:
     elements : list
         A list of elements related to the audio message.
     """
-    # chat_profile = cl.user_session.get("chat_profile")
-    # model_name = await initialize_chat_profile(chat_profile=chat_profile)
     await audio_answer(elements=elements or [])
 
 

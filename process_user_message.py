@@ -6,6 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from topic_classifier import classify_intent
 from scrape_links import scrape_link
 from search_duckduckgo_queries import agent_results_text
+from youtube_video_transcribe import youtube_transcribe
 
 
 load_dotenv(override=True)
@@ -20,22 +21,21 @@ async def process_user_message(user_message: cl.Message) -> None:
 
     Workflow:
     - If no active chain exists in the user session:
-        1. Classifies the user's intent (web scraping, Searches, or general chat).
+        1. Classifies the user's intent (web scraping, Searches, general chat, or video transcribe).
         2. Executes the corresponding action:
             - Scrapes content from a URL (if 'scraper' intent).
             - Searches using DuckDuckGo (if 'search' intent).
             - Answers a general chat question (if 'chat' intent).
+            - Transcribe a video from YouTube (if 'video_transcribe' intent)
 
     - If an active chain exists:
         - Processes the message using the existing chain and retrieves the response and source documents.
     """
 
-    # memory = cl.user_session.get("memory")
 
     chain = cl.user_session.get("chain")
     user_message = user_message.content.strip()
 
-    # memory.chat_memory.add_user_message(user_message)
 
     if chain is None:
         intent = await classify_intent(user_message=user_message)
@@ -51,7 +51,7 @@ async def process_user_message(user_message: cl.Message) -> None:
         elif 'search' in intent:
             print('Your intent is: ', intent)
                         
-            await cl.Message(content="DuckDuckGo Search Selected!\n You've chosen to search on the DuckDuckGo Web Browser.\n The first 5 links will be displayed.").send()
+            await cl.Message(content="You've chosen to search on the DuckDuckGo Web Browser.\n The first 5 links will be displayed.").send()
             search_results = await agent_results_text(user_message=user_message)
 
             formatted_results = ""
@@ -62,7 +62,6 @@ async def process_user_message(user_message: cl.Message) -> None:
                 formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
 
             await cl.Message(content=formatted_results).send()
-            # memory.chat_memory.add_ai_message(formatted_results)
                           
         elif 'chat' in intent:
             print('Your intent is: ', intent)
@@ -75,19 +74,26 @@ async def process_user_message(user_message: cl.Message) -> None:
             answer = await model.ainvoke(user_message)
             
             await cl.Message(content=answer.content).send()
-            # memory.chat_memory.add_ai_message(answer.content)
+
+        elif 'video_transcribe' in intent:
+            print('Your intent is: ', intent)
+
+            transcribe = await youtube_transcribe(url=user_message)
+            await cl.Message(content=transcribe).send()
+
 
     else:
         if type(chain) == str:
             pass
-            
-        # elif type(chain) == DataFrame:
-        #     pass
 
         else:  
-            response = await chain.ainvoke(user_message)
+            # response = await chain.ainvoke(user_message)
+            response = await chain.ainvoke(
+                {"input": user_message},
+                config=cl.run_config,
+                session_id=str(cl.user_session.id)  # Pass session ID for history tracking
+            )
             answer = response["answer"]
             
             await cl.Message(content=answer).send()
-            # memory.chat_memory.add_ai_message(answer)
 

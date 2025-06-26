@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import html2text
 
+
 async def scrape_link(user_message: str) -> str:
     """
     Scrapes html from a URL eb Page, converts it to Markdown format 

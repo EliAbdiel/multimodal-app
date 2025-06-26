@@ -230,7 +230,6 @@ async def convert_audio_to_wav(audio_buffer: BytesIO, mime_type: str) -> BytesIO
 async def audio_answer(elements: list = None) -> None:
     """Enhanced audio transcription with multiple recognition engines"""
 
-    # memory = cl.user_session.get("memory")
 
     if elements is None:
         elements = []
@@ -258,7 +257,6 @@ async def audio_answer(elements: list = None) -> None:
             await cl.Message(content="Could not understand the audio. Please try speaking more clearly or check your microphone.").send()
             return
 
-        # memory.chat_memory.add_user_message(transcription)
 
         # Add confidence scoring
         confidence_msg = "" if len(transcription) > 10 else " (Low confidence - please speak more clearly)"
@@ -281,7 +279,6 @@ async def audio_answer(elements: list = None) -> None:
                     answer = response["answer"]
                     
                     await cl.Message(content=answer).send()
-                    # memory.chat_memory.add_ai_message(answer)
                     # await speak_async(answer=answer)
                        
         else:
@@ -310,7 +307,6 @@ async def audio_answer(elements: list = None) -> None:
                     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
                 
                 await cl.Message(content=formatted_results).send()
-                # memory.chat_memory.add_ai_message(formatted_results)
                                 
             elif 'chat' in intent:
                 print('Your intent is: ', intent)
@@ -322,8 +318,7 @@ async def audio_answer(elements: list = None) -> None:
                         )
                 answer = await model.ainvoke(transcription)
                 
-                await cl.Message(content=answer.content).send()
-                # memory.chat_memory.add_ai_message(answer.content)  
+                await cl.Message(content=answer.content).send()  
                 # await speak_async(answer=answer.content) 
 
     except sr.UnknownValueError:
