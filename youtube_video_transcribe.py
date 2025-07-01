@@ -36,4 +36,7 @@ async def youtube_transcribe(url: str) -> str:
         )
     )
 
+    print("\nYouTube Transcription Metadata:")
+    print(response.usage_metadata)
+
     return response.text

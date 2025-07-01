@@ -10,6 +10,8 @@ import numpy as np
 import audioop
 from scipy.signal import butter, filtfilt, wiener
 from scipy.io import wavfile
+
+from generate_images import generate_image
 try:
     import librosa
     import noisereduce as nr
@@ -182,8 +184,18 @@ async def audio_answer(elements: list = None) -> None:
                        
         else:
             intent = await classify_intent(user_message=transcription)
+
+            if 'image' in intent:
+                print('Your intent is: ', intent)
+                
+                await cl.Message(content="Image Generation Selected! \n You've chosen to generate an image.").send()
+                
+                generated_image_path = await generate_image(user_message=transcription)
+                image_element = cl.Image(name="Generated Image", path=generated_image_path)
+                
+                await cl.Message(content="Here you go! \n Here's the generated image!", elements=[image_element]).send()
             
-            if 'scraper' in intent:
+            elif 'scraper' in intent:
                 print('Your intent is: ', intent)
                 
                 scraped_link = await scrape_link(user_message=transcription)
@@ -216,6 +228,9 @@ async def audio_answer(elements: list = None) -> None:
                             temperature=0.5,
                         )
                 answer = await model.ainvoke(transcription)
+
+                print("\nSpeech Usage Metadata:")
+                print(answer.usage_metadata)
                 
                 await cl.Message(content=answer.content).send()  
                 # await speak_async(answer=answer.content) 

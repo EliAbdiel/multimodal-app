@@ -4,6 +4,7 @@ import chainlit as cl
 # from langchain_community.chat_models import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from topic_classifier import classify_intent
+from generate_images import generate_image
 from scrape_links import scrape_link
 from search_duckduckgo_queries import agent_results_text
 from youtube_video_transcribe import youtube_transcribe
@@ -40,7 +41,17 @@ async def process_user_message(user_message: cl.Message) -> None:
     if chain is None:
         intent = await classify_intent(user_message=user_message)
         
-        if 'scraper' in intent:
+        if 'image' in intent:
+            print('Your intent is: ', intent)
+            
+            await cl.Message(content="Image Generation Selected! \nYou've chosen to generate an image.").send()
+            
+            generated_image_path = await generate_image(user_message=user_message)
+            image_element = cl.Image(name="Generated Image", path=generated_image_path)
+            
+            await cl.Message(content="Here you go! \nHere's the generated image!", elements=[image_element]).send()
+
+        elif 'scraper' in intent:
             print('Your intent is: ', intent)
 
             scraped_link = await scrape_link(user_message=user_message)
@@ -72,6 +83,8 @@ async def process_user_message(user_message: cl.Message) -> None:
                         temperature=0.5,
                     ) 
             answer = await model.ainvoke(user_message)
+            print("\nChat Usage Metadata:")
+            print(answer.usage_metadata)
             
             await cl.Message(content=answer.content).send()
 
@@ -89,9 +102,13 @@ async def process_user_message(user_message: cl.Message) -> None:
         else:  
             # response = await chain.ainvoke(user_message)
             response = await chain.ainvoke(
-                {"input": user_message},
-                config=cl.run_config,
-                session_id=str(cl.user_session.id)  # Pass session ID for history tracking
+                {
+                    "question": user_message, 
+                    "input": user_message
+                },  # Include both keys
+                # config=cl.run_config,
+                # session_id=str(cl.user_session.id)  # Pass session ID for history tracking
+                {"configurable": {"session_id": str(id(cl.user_session))}}  # Use object id as a unique identifier
             )
             answer = response["answer"]
             
