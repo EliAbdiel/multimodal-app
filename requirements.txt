@@ -24,3 +24,6 @@ noisereduce
 asyncpg
 SQLAlchemy
 aiohttp
+azure-identity
+azure-storage-file-datalake
+greenlet

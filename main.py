@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 import chainlit as cl
 from chainlit.types import ThreadDict
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
+from chainlit.data.storage_clients.azure import AzureStorageClient
+from chainlit.data.storage_clients.azure_blob import AzureBlobStorageClient
+from azure.identity import ClientSecretCredential
 from process_user_files import handle_attachment
 from process_user_message import process_user_message
 from process_user_audios import process_audio_chunk, audio_answer
@@ -114,10 +117,31 @@ async def on_message(user_message: cl.Message) -> None:
     await process_user_message(user_message=user_message)
 
 
+# credential = ClientSecretCredential(
+#     tenant_id=os.getenv("OAUTH_AZURE_AD_TENANT_ID"),
+#     client_id=os.getenv("OAUTH_AZURE_AD_CLIENT_ID"),
+#     client_secret=os.getenv("OAUTH_AZURE_AD_CLIENT_SECRET")
+# )
+
+# storage_client = AzureBlobStorageClient(
+#     account_url=os.environ["STORAGE_URL"], 
+#     container=os.environ["CONTAINER_NAME"],
+#     credential=credential
+# )
+
+storage_client = AzureBlobStorageClient(
+    container_name=os.environ["CONTAINER_NAME"],
+    storage_account=os.environ["STORAGE_ACCOUNT_NAME"],
+    storage_key=os.environ["STORAGE_KEY"]
+)
+
 @cl.data_layer
 def get_data_layer():
     # ALTER TABLE steps ADD COLUMN "defaultOpen" BOOLEAN DEFAULT false;
-    return SQLAlchemyDataLayer(conninfo=os.environ["DATABASE_URL"])
+    return SQLAlchemyDataLayer(
+        conninfo=os.environ["DATABASE_URL"], 
+        storage_provider=storage_client
+    )
 
 
 @cl.on_chat_resume
