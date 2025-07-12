@@ -1,11 +1,13 @@
 import os
 from dotenv import load_dotenv
+# import asyncpg
+# import asyncio
 import chainlit as cl
 from chainlit.types import ThreadDict
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
-from chainlit.data.storage_clients.azure import AzureStorageClient
+# from chainlit.data.storage_clients.azure import AzureStorageClient
 from chainlit.data.storage_clients.azure_blob import AzureBlobStorageClient
-from azure.identity import ClientSecretCredential
+# from azure.identity import ClientSecretCredential
 from process_user_files import handle_attachment
 from process_user_message import process_user_message
 from process_user_audios import process_audio_chunk, audio_answer
@@ -135,12 +137,14 @@ storage_client = AzureBlobStorageClient(
     storage_key=os.environ["STORAGE_KEY"]
 )
 
+
 @cl.data_layer
 def get_data_layer():
     # ALTER TABLE steps ADD COLUMN "defaultOpen" BOOLEAN DEFAULT false;
     return SQLAlchemyDataLayer(
-        conninfo=os.environ["DATABASE_URL"], 
-        storage_provider=storage_client
+        conninfo=os.environ["DATABASE_URL"],
+        # ssl_require=True, 
+        storage_provider=storage_client,
     )
 
 

@@ -13,7 +13,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from create_chain_retriever import create_chain_retriever
-from process_text_to_speech import speak_async
+# from process_text_to_speech import speak_async
 
 
 load_dotenv(override=True)
@@ -81,7 +81,7 @@ async def process_word(file: cl.File) -> ConversationalRetrievalChain:
     return await create_chain_retriever(texts=doc_text, source_prefix="docx")
 
 
-def prompt_func(data: dict) -> list:
+def prompt_func_img(data: dict) -> list:
     """
     Creates a formatted message for the chat model using text and image data.
 
@@ -142,7 +142,7 @@ async def process_img(file: cl.File, user_message: str) -> str:
     pil_image.save(buffered, format="JPEG")
     img_str_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
     
-    chain = prompt_func | llm | StrOutputParser()
+    chain = prompt_func_img | llm | StrOutputParser()
     answer_chain = await chain.ainvoke({"text": user_message.content, "image": img_str_b64})
     
     await cl.Message(content=answer_chain).send()
@@ -307,7 +307,7 @@ async def handle_files_from_audio_message(elements: list, user_message: str) -> 
                 elif file_type == "image":
                     chain = await process_img(file=file, user_message=user_message) 
                     cl.user_session.set("chain", chain)
-                    await speak_async(answer=chain)
+                    # await speak_async(answer=chain)
                 
             except Exception as e:
                 print(f"Error during the {file.name} processing: {e}")

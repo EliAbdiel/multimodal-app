@@ -26,17 +26,19 @@ from create_chain_retriever import create_chain_retriever
 from process_user_files import handle_files_from_audio_message
 from topic_classifier import classify_intent
 from scrape_links import scrape_link
-from search_duckduckgo_queries import agent_results_text
-from process_text_to_speech import speak_async
+from little_deepresearch import agent_results_text
+# from search_duckduckgo_queries import agent_results_text
+# from process_text_to_speech import speak_async
 
 
 load_dotenv(override=True)
 
 # Define a threshold for detecting silence and a timeout for ending a turn
 SILENCE_THRESHOLD = (
-    3500  # Adjust based on your audio level (e.g., lower for quieter audio)
+    2000
+    #3500  # Adjust based on your audio level (e.g., lower for quieter audio)
 )
-SILENCE_TIMEOUT = 1300.0  # Seconds of silence to consider the turn finished
+SILENCE_TIMEOUT = 1300.0  # Seconds (1.3) of silence to consider the turn finished
 
 
 async def process_audio_chunk(chunk: cl.InputAudioChunk) -> None:
@@ -206,18 +208,18 @@ async def audio_answer(elements: list = None) -> None:
             elif 'search' in intent:
                 print('Your intent is: ', intent)
                                 
-                await cl.Message(content="Search Selected!\n You've chosen to search on the DuckDuckGo Web Browser.").send()
+                await cl.Message(content="Search Selected!\n You've chosen to search on the Web Browser.").send()
                 
                 search_results = await agent_results_text(user_message=transcription)
-                formatted_results = ""
                 
-                for index, result in enumerate(search_results[:5], start=1):  
-                    title = result['title']
-                    href = result['href']
-                    body = result['body']
-                    formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
+                # formatted_results = ""
+                # for index, result in enumerate(search_results[:5], start=1):  
+                #     title = result['title']
+                #     href = result['href']
+                #     body = result['body']
+                #     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
                 
-                await cl.Message(content=formatted_results).send()
+                await cl.Message(content=search_results).send()
                                 
             elif 'chat' in intent:
                 print('Your intent is: ', intent)

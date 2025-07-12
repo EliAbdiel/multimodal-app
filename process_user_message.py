@@ -6,7 +6,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from topic_classifier import classify_intent
 from generate_images import generate_image
 from scrape_links import scrape_link
-from search_duckduckgo_queries import agent_results_text
+# from search_duckduckgo_queries import agent_results_text
+from little_deepresearch import agent_results_text
 from youtube_video_transcribe import youtube_transcribe
 
 
@@ -18,7 +19,6 @@ async def process_user_message(user_message: cl.Message) -> None:
 
     Args:
         user_message (cl.Message): The message sent by the user to be processed.
-        model_name (str): The model selected with the chat_profile choice.
 
     Workflow:
     - If no active chain exists in the user session:
@@ -27,7 +27,7 @@ async def process_user_message(user_message: cl.Message) -> None:
             - Scrapes content from a URL (if 'scraper' intent).
             - Searches using DuckDuckGo (if 'search' intent).
             - Answers a general chat question (if 'chat' intent).
-            - Transcribe a video from YouTube (if 'video_transcribe' intent)
+            - Transcribe a video from YouTube (if 'youtube_transcribe' intent)
 
     - If an active chain exists:
         - Processes the message using the existing chain and retrieves the response and source documents.
@@ -49,7 +49,7 @@ async def process_user_message(user_message: cl.Message) -> None:
             generated_image_path = await generate_image(user_message=user_message)
             image_element = cl.Image(name="Generated Image", path=generated_image_path)
             
-            await cl.Message(content="Here you go! \nHere's the generated image!", elements=[image_element]).send()
+            await cl.Message(content="Here's the generated image!", elements=[image_element]).send()
 
         elif 'scraper' in intent:
             print('Your intent is: ', intent)
@@ -62,17 +62,17 @@ async def process_user_message(user_message: cl.Message) -> None:
         elif 'search' in intent:
             print('Your intent is: ', intent)
                         
-            await cl.Message(content="You've chosen to search on the DuckDuckGo Web Browser.\n The first 5 links will be displayed.").send()
+            await cl.Message(content="You've chosen to search on the Web Browser.\n The first 5 links will be displayed.").send()
             search_results = await agent_results_text(user_message=user_message)
 
-            formatted_results = ""
-            for index, result in enumerate(search_results[:5], start=1):  
-                title = result['title']
-                href = result['href']
-                body = result['body']
-                formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
+            # formatted_results = ""
+            # for index, result in enumerate(search_results[:5], start=1):  
+            #     title = result['title']
+            #     href = result['href']
+            #     body = result['body']
+            #     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
 
-            await cl.Message(content=formatted_results).send()
+            await cl.Message(content=search_results.content).send()
                           
         elif 'chat' in intent:
             print('Your intent is: ', intent)
@@ -99,17 +99,20 @@ async def process_user_message(user_message: cl.Message) -> None:
         if type(chain) == str:
             pass
 
-        else:  
-            # response = await chain.ainvoke(user_message)
-            response = await chain.ainvoke(
-                {
-                    "question": user_message, 
-                    "input": user_message
-                },  # Include both keys
-                # config=cl.run_config,
-                # session_id=str(cl.user_session.id)  # Pass session ID for history tracking
-                {"configurable": {"session_id": str(id(cl.user_session))}}  # Use object id as a unique identifier
-            )
+        else:
+            cb = cl.AsyncLangchainCallbackHandler()  
+            response = await chain.ainvoke(user_message, callbacks=[cb])
+            # response = await chain.ainvoke(
+            #     {
+            #         "question": user_message, 
+            #         "input": user_message
+            #     },  # Include both keys
+            #     # config=cl.run_config,
+            #     # session_id=str(cl.user_session.id)  # Pass session ID for history tracking
+            #     {"configurable": {"session_id": str(id(cl.user_session))}}  # Use object id as a unique identifier
+            # )
+            print("\nQ-A Usage Metadata:")
+            print(f"{response.response_metadata}\n")
             answer = response["answer"]
             
             await cl.Message(content=answer).send()
