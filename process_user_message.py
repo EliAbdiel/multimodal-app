@@ -5,7 +5,7 @@ import chainlit as cl
 from langchain_google_genai import ChatGoogleGenerativeAI
 from topic_classifier import classify_intent
 from generate_images import generate_image
-from scrape_links import scrape_link
+from scrape_links import scrape_link, scrape_web_async
 # from search_duckduckgo_queries import agent_results_text
 from little_deepresearch import agent_results_text
 from youtube_video_transcribe import youtube_transcribe
@@ -54,15 +54,16 @@ async def process_user_message(user_message: cl.Message) -> None:
         elif 'scraper' in intent:
             print('Your intent is: ', intent)
 
-            scraped_link = await scrape_link(user_message=user_message)
-            link_element = cl.File(name='Extracted link', path=str(scraped_link))
+            await cl.Message(content="You've chosen to scrape link.\n Please hold on while I work on it!").send()
+            scraped_link = await scrape_web_async(url=user_message)
+            # link_element = cl.File(name='Extracted link', path=str(scraped_link))
             
-            await cl.Message(content='Your link has been successfully extracted.\n Click here to access the content directly!: ', elements=[link_element]).send()
+            await cl.Message(content=scraped_link).send()
             
         elif 'search' in intent:
             print('Your intent is: ', intent)
                         
-            await cl.Message(content="You've chosen to search on the Web Browser.\n The first 5 links will be displayed.").send()
+            await cl.Message(content="You've chosen to search on the Web Browser.\n Please wait!").send()
             search_results = await agent_results_text(user_message=user_message)
 
             # formatted_results = ""

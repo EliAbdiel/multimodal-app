@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 # import asyncio
 import httpx
 # import hashlib
@@ -9,6 +11,46 @@ import html2text
 import aiofiles
 import uuid
 
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_openai import OpenAI, ChatOpenAI
+from langchain.chains.combine_documents import create_stuff_documents_chain
+# from langchain.chains.llm import LLMChain
+from langchain_core.prompts import ChatPromptTemplate
+
+load_dotenv()
+
+llm = ChatOpenAI(
+    openai_api_key=os.environ["OPENROUTER_API_KEY"],
+    openai_api_base=os.environ["OPENROUTER_BASE_URL"],
+    model_name=os.environ["OPENROUTER_MODEL_NAME"],
+    max_tokens=None,
+    temperature=0.3,
+)
+
+async def scrape_web_async(url: str):
+    
+    loader = WebBaseLoader(url)
+    # docs = loader.load()
+    docs = []
+    async for doc in loader.alazy_load():
+        docs.append(doc)
+
+    # Define prompt
+    prompt = ChatPromptTemplate.from_template("Summarize this content: {context}")
+
+    # Instantiate chain
+    chain = create_stuff_documents_chain(llm, prompt)
+
+    # Invoke chain
+    result = await chain.ainvoke({"context": docs[:10000]})
+
+    try:
+        if result:
+            print(f"Processed URL {url}, sussessfully extracted content.")
+        return result
+    except Exception as e:
+        print(f"Error processing URL {url}: {e}")
+        return "I encountered an error while processing the URL. Please try again later!"
 
 async def scrape_link(user_message: str) -> str:
     """

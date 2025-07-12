@@ -25,7 +25,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from create_chain_retriever import create_chain_retriever
 from process_user_files import handle_files_from_audio_message
 from topic_classifier import classify_intent
-from scrape_links import scrape_link
+from scrape_links import scrape_link, scrape_web_async
 from little_deepresearch import agent_results_text
 # from search_duckduckgo_queries import agent_results_text
 # from process_text_to_speech import speak_async
@@ -200,16 +200,16 @@ async def audio_answer(elements: list = None) -> None:
             elif 'scraper' in intent:
                 print('Your intent is: ', intent)
                 
-                scraped_link = await scrape_link(user_message=transcription)
-                link_element = cl.File(name='Extracted link', path=scraped_link)
+                await cl.Message(content="You've chosen to scrape link.\n Please hold on while I work on it!").send()
+                scraped_link = await scrape_web_async(url=transcription)
+                # link_element = cl.File(name='Extracted link', path=scraped_link)
                 
-                await cl.Message(content='Your link has been successfully extracted.\n Click here to access the content directly!: ', elements=[link_element]).send()
+                await cl.Message(content=scraped_link).send()
  
             elif 'search' in intent:
                 print('Your intent is: ', intent)
                                 
-                await cl.Message(content="Search Selected!\n You've chosen to search on the Web Browser.").send()
-                
+                await cl.Message(content="Search on the Web Browser Selected!\n Please wait while I work on it!").send()
                 search_results = await agent_results_text(user_message=transcription)
                 
                 # formatted_results = ""
@@ -219,7 +219,7 @@ async def audio_answer(elements: list = None) -> None:
                 #     body = result['body']
                 #     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
                 
-                await cl.Message(content=search_results).send()
+                await cl.Message(content=search_results.content).send()
                                 
             elif 'chat' in intent:
                 print('Your intent is: ', intent)

@@ -3,7 +3,7 @@ import asyncio
 import json
 from dotenv import load_dotenv
 # from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 # from langchain.schema.output_parser import StrOutputParser
@@ -16,13 +16,13 @@ load_dotenv()
 SUMMARY_TEMPLATE = generate_webpage_summary_template()
 SUMMARY_PROMPT = ChatPromptTemplate.from_template(SUMMARY_TEMPLATE)
 
-llm_openai = ChatOpenAI(
-    openai_api_key=os.environ["OPENROUTER_API_KEY"],
-    openai_api_base=os.environ["OPENROUTER_BASE_URL"],
-    model_name=os.environ["OPENROUTER_MODEL_NAME"],
-    max_tokens=None,
-    temperature=0.0,
-)
+# llm_openai = ChatOpenAI(
+#     openai_api_key=os.environ["OPENROUTER_API_KEY"],
+#     openai_api_base=os.environ["OPENROUTER_BASE_URL"],
+#     model_name=os.environ["OPENROUTER_MODEL_NAME"],
+#     max_tokens=None,
+#     temperature=0.0,
+# )
 
 # llm_ollama = ChatOllama(model="llama3.2:1b")
 
