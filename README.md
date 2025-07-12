@@ -6,6 +6,6 @@
 | Assistant Audio Understand                                         | Assistant Search                                                   |
 |![App Screenshot](public/screenshots/Assistant_audio_understand.png)|![App Screenshot](public/screenshots/Assistant_websearch.png)       |
 | Assistant Image Generate                                           | Assistant Youtube Video Transcript                                 |
-|                                                                    |                                                                    |
+|![App Screenshot](public/screenshots/Assistant_image_generate.png)|![App Screenshot](public/screenshots/Assistant_youtube_transcript.png)|
 | Assistant Process PDF File                                         | Assistant Process Docx Files                                       |
 |                                                                    |                                                                    |
