@@ -50,7 +50,7 @@ async def scrape_web_async(url: str):
         return result
     except Exception as e:
         print(f"Error processing URL {url}: {e}")
-        return "I encountered an error while processing the URL. Please try again later!"
+        return "I encountered an error while processing the URL (e.g., malformed URL). Please try again later!"
 
 async def scrape_link(user_message: str) -> str:
     """

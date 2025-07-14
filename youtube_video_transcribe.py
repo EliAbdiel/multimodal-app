@@ -24,19 +24,34 @@ async def youtube_transcribe(url: str) -> str:
     prompt = """Transcribe the audio from this video, giving timestamps for salient events in the video. 
         Also provide visual descriptions."""
 
-    response = client.models.generate_content(
-        model=os.environ["GEMINI_2_5_MODEL"],
-        contents=types.Content(
-            parts=[
-                types.Part(
-                    file_data=types.FileData(file_uri=url)
-                ),
-                types.Part(text=prompt)
-            ]
+    try:
+        response = client.models.generate_content(
+            model=os.environ["GEMINI_2_5_MODEL"],
+            contents=types.Content(
+                parts=[
+                    types.Part(
+                        file_data=types.FileData(file_uri=url)
+                    ),
+                    types.Part(text=prompt)
+                ]
+            )
         )
-    )
 
-    print("\nYouTube Transcription Metadata:")
-    print(response.usage_metadata)
+        if response.text:
+            print("\nTranscription successful!")
+            print("\nYouTube Transcription Metadata:")
+            print(response.usage_metadata)
+        
+        return response.text
+    
+    # except genai.exceptions.InvalidArgument:
+    #     print("Invalid argument provided to the API (e.g., malformed URL).")
+    #     return None
 
-    return response.text
+    # except genai.exceptions.ResourceExhausted:
+    #     print("API quota exhausted. Try again later.")
+    #     return None
+
+    except Exception as e:
+        print(f"An error occurred while processing the YouTube video: {e}")
+        return "Error processing the video (e.g., malformed URL). Please check the URL and try again."
