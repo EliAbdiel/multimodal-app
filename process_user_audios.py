@@ -26,7 +26,7 @@ from create_chain_retriever import create_chain_retriever
 from process_user_files import handle_files_from_audio_message
 from topic_classifier import classify_intent
 from scrape_links import scrape_link, scrape_web_async
-from little_deepresearch import agent_results_text
+from little_deepresearch import agent_results_text, content_as_pdf
 # from search_duckduckgo_queries import agent_results_text
 # from process_text_to_speech import speak_async
 
@@ -211,6 +211,8 @@ async def audio_answer(elements: list = None) -> None:
                                 
                 await cl.Message(content="Search on the Web Browser Selected!\n Please wait while I work on it!").send()
                 search_results = await agent_results_text(user_message=transcription)
+                search_link = await content_as_pdf(content=search_results)
+                pdf_element = cl.Pdf(name="research_report", path=str(search_link))
                 
                 # formatted_results = ""
                 # for index, result in enumerate(search_results[:5], start=1):  
@@ -219,7 +221,7 @@ async def audio_answer(elements: list = None) -> None:
                 #     body = result['body']
                 #     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
                 
-                await cl.Message(content=search_results.content).send()
+                await cl.Message(content=search_results, elements=[pdf_element]).send()
                                 
             elif 'chat' in intent:
                 print('Your intent is: ', intent)

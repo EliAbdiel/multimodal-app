@@ -1,20 +1,35 @@
 import os
+import io
 import asyncio
 import json
+import html2text
+import aiofiles
+import markdown
+import chainlit as cl
+
+from weasyprint import HTML
 from dotenv import load_dotenv
+from pathlib import Path
 # from langchain_ollama import ChatOllama
 # from langchain_openai import ChatOpenAI
+from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from prompts import generate_webpage_summary_template, generate_search_queries_prompt, generate_research_report_prompt
-from web_search import scrape_link_async, flatten_list_of_list, web_search_async, web_search_with_tavily
+from web_search import scrape_link_async, flatten_list_of_list, web_search, web_search_async, web_search_with_tavily
 
 load_dotenv()
 
 SUMMARY_TEMPLATE = generate_webpage_summary_template()
 SUMMARY_PROMPT = ChatPromptTemplate.from_template(SUMMARY_TEMPLATE)
+
+rate_limiter = InMemoryRateLimiter(
+    requests_per_second=0.1,  # <-- Super slow! We can only make a request once every 10 seconds!!
+    check_every_n_seconds=0.1,  # Wake up every 100 ms to check whether allowed to make a request,
+    max_bucket_size=10,  # Controls the maximum burst size.
+)
 
 # llm_openai = ChatOpenAI(
 #     openai_api_key=os.environ["OPENROUTER_API_KEY"],
@@ -28,12 +43,14 @@ SUMMARY_PROMPT = ChatPromptTemplate.from_template(SUMMARY_TEMPLATE)
 
 llm_google = ChatGoogleGenerativeAI(
     model=os.environ["GEMINI_MODEL"],
+    rate_limiter=rate_limiter,
     google_api_key=os.environ["GEMINI_API_KEY"],
     temperature=0.3,
 )
 
 llm_google_v2 = ChatGoogleGenerativeAI(
     model=os.environ["GEMINI_MODEL"],
+    rate_limiter=rate_limiter,
     google_api_key=os.environ["GEMINI_API_KEY_V2"],
     temperature=0.3,
 )
@@ -45,7 +62,7 @@ async def scrape_and_summarize(url_data):
   return f"URL: {url_data['url']}\n\nSummary: {summary}"
 
 async def process_search_results(data):
-  urls = await web_search_with_tavily(data["question"])
+  urls = await web_search(data["question"])
   if not urls:
     print(f"No results could be obtained for the search: {data['question']}")
     return []
@@ -113,7 +130,27 @@ async def agent_results_text(user_message: str):
   # question = "Encuentra informacion sobre RAG (Retrieval-Augmented Generation)"
   results = await generate_report(user_message)
   print(f"\n\n{results}\n")
-  return results
+  return results.content
+
+async def content_as_pdf(content: str):
+  output_dir = Path("extracted_data")
+  output_dir.mkdir(exist_ok=True)
+
+  pdf_bytes = await cl.make_async(_generate_pdf_bytes)(markdown_content=content)
+
+  pdf_file_path = output_dir/f"research_report.pdf"
+
+  async with aiofiles.open(pdf_file_path, mode="wb") as f:
+      await f.write(pdf_bytes)
+
+  return str(pdf_file_path)
+
+def _generate_pdf_bytes(markdown_content: str) -> bytes:
+    html_content = markdown.markdown(markdown_content)
+    pdf_file = io.BytesIO()
+    HTML(string=html_content).write_pdf(pdf_file)
+    pdf_file.seek(0)
+    return pdf_file.getvalue()
 
 # if __name__ == "__main__":
 #   asyncio.run(main())

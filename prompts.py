@@ -13,14 +13,14 @@ def generate_webpage_summary_template():
 
 
 def generate_search_queries_prompt():
-  return '''Generate exactly 3 Google search queries related to "{question}".
-    Include specific details such as locations, names, etc.
-    Example format: ["Query 1", "Query 2", "Query 3"]
-    Return only a valid JSON array of strings with no extra text.'''
+  # return '''Generate exactly 3 Google search queries related to "{question}".
+  #   Include specific details such as locations, names, etc.
+  #   Example format: ["Query 1", "Query 2", "Query 3"]
+  #   Return only a valid JSON array of strings with no extra text.'''
 
-  # return 'Write 3 google search queries to search online that form an objective opinion from the following task: "{question}"' \
-  #         'Also include in the queries specified task details such as locations, names, etc.\n' \
-  #         'You must respond with a list of search queries strictly in the following format: ["query 1", "query 2", "query 3"].'
+  return 'Generate exactly 3 google search queries to search online that form an objective opinion from the following task: "{question}"' \
+          'Also include in the queries specified task details such as locations, names, etc.\n' \
+          'You must respond with a list of search queries strictly in the following format: ["query 1", "query 2", "query 3"].'
 
 
 def generate_research_report_prompt():

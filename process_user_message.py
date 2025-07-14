@@ -7,7 +7,7 @@ from topic_classifier import classify_intent
 from generate_images import generate_image
 from scrape_links import scrape_link, scrape_web_async
 # from search_duckduckgo_queries import agent_results_text
-from little_deepresearch import agent_results_text
+from little_deepresearch import agent_results_text, content_as_pdf
 from youtube_video_transcribe import youtube_transcribe
 
 
@@ -63,8 +63,10 @@ async def process_user_message(user_message: cl.Message) -> None:
         elif 'search' in intent:
             print('Your intent is: ', intent)
                         
-            await cl.Message(content="You've chosen to search on the Web Browser.\n Please wait!").send()
+            await cl.Message(content="Search on the Web Browser Selected!\n Please wait while I work on it!").send()
             search_results = await agent_results_text(user_message=user_message)
+            search_link = await content_as_pdf(content=search_results)
+            pdf_element = cl.Pdf(name="research_report", path=str(search_link))
 
             # formatted_results = ""
             # for index, result in enumerate(search_results[:5], start=1):  
@@ -73,7 +75,7 @@ async def process_user_message(user_message: cl.Message) -> None:
             #     body = result['body']
             #     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
 
-            await cl.Message(content=search_results.content).send()
+            await cl.Message(content=search_results, elements=[pdf_element]).send()
                           
         elif 'chat' in intent:
             print('Your intent is: ', intent)

@@ -34,3 +34,4 @@ azure-storage-file-datalake
 greenlet
 weasyprint
 markdown
+markdownify
