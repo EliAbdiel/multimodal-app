@@ -94,7 +94,7 @@ async def process_user_message(user_message: cl.Message) -> None:
         elif 'video_transcribe' in intent:
             print('Your intent is: ', intent)
 
-            transcribe = await youtube_transcribe(url=user_message)
+            transcribe = await youtube_transcribe(user_message=user_message)
             await cl.Message(content=transcribe).send()
 
 

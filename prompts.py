@@ -1,3 +1,31 @@
+def generate_context_and_url_prompt():
+  return """Analyze the following input and return only a list in this exact format: ["context_of_the_request", "url_from_input"]
+
+      Rules:
+      1. If the input contains both text and a URL, extract the context and the URL, regardless of their order.
+      2. If the input is ONLY a URL, return it as the only element in the list.
+      3. Do NOT include any extra text, explanation, or formatting of any kind.
+      4. Trim all leading/trailing whitespace from both context and URL.
+
+      Example 1:
+      User input: Summarize this YouTube video in 3 lines: https://youtu.be/Huy-Gn4RtGQ?si=TCBo-fVBxNWXdDh6
+      Expected output: ["Summarize this YouTube video in 3 lines", "https://youtu.be/Huy-Gn4RtGQ?si=TCBo-fVBxNWXdDh6"]
+
+      Example 2:
+      User input:  https://youtu.be/Huy-Gn4RtGQ?si=TCBo-fVBxNWXdDh6
+      Expected output: ["https://youtu.be/Huy-Gn4RtGQ?si=TCBo-fVBxNWXdDh6"]
+
+      Example 3:
+      User input:  https://youtu.be/dQw4w9WgXcQ?si=123456789 resume the YouTube video in 3 lines
+      Expected output: ["resume the YouTube video in 3 lines", "https://youtu.be/dQw4w9WgXcQ?si=123456789"]
+
+      Now process this input:
+      User input: {input}"""
+
+def generate_youtube_transcribe_prompt():
+  return """Transcribe the audio from this video, giving timestamps for salient events in the video.
+      Also provide visual descriptions."""
+
 def generate_webpage_summary_template():
   return """{text}
 
