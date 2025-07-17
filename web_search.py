@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 load_dotenv()
 
-RESULTS_PER_QUESTION = 3
+RESULTS_PER_QUESTION = 1
 
 ddgs = DuckDuckGoSearchAPIWrapper()
 
@@ -41,22 +41,25 @@ tavily_search = TavilySearchAPIWrapper(tavily_api_key=os.environ["TAVILY_API_KEY
 #     print(f"An error occurred: {e}")
 #     return f"Failed to scrape the webpage. Error: {e}"
 
-# USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
 
 async def scrape_link_async(url):
   headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0 Safari/537.36"
+      "User-Agent": USER_AGENT
+      # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0 Safari/537.36"
   }
   try:
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(headers=headers) as session:
       async with session.get(url) as response:
         if response.status == 200:
           # Parse the content of the page using BeautifulSoup
           html = await response.text()
-          soup = BeautifulSoup(html, 'html.parser')
+          soup = BeautifulSoup(markup=html, features='html.parser')
             
           # Extract all text from the webpage
           text = soup.get_text(separator=' ', strip=True)
+          if text:
+            print(f"Scraped text from {url} successfully.")
 
           return text
         else:
@@ -118,7 +121,9 @@ async def web_search_with_tavily(query: str, num_results: int = RESULTS_PER_QUES
     return []
   
 async def web_search_async(query: str, num_results: int = RESULTS_PER_QUESTION):
-  results = await duckduckgo_search(search_queries=query, num_results=num_results)
+  queries = []
+  queries.append(query)
+  results = await duckduckgo_search(search_queries=queries, num_results=num_results)
   print(f"\nweb_search_async results: {results}\n")
   return results
 

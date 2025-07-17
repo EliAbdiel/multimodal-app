@@ -17,6 +17,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+# from gemini_llm import gemini_llm, gemini_llm_v2
 from prompts import generate_webpage_summary_template, generate_search_queries_prompt, generate_research_report_prompt
 from web_search import scrape_link_async, flatten_list_of_list, web_search, web_search_async, web_search_with_tavily
 
@@ -62,7 +63,7 @@ async def scrape_and_summarize(url_data):
   return f"URL: {url_data['url']}\n\nSummary: {summary}"
 
 async def process_search_results(data):
-  urls = await web_search(data["question"])
+  urls = await web_search_async(data["question"])
   if not urls:
     print(f"No results could be obtained for the search: {data['question']}")
     return []

@@ -24,6 +24,7 @@ async def process_user_message(user_message: cl.Message) -> None:
     - If no active chain exists in the user session:
         1. Classifies the user's intent (web scraping, Searches, general chat, or video transcribe).
         2. Executes the corresponding action:
+            - Generate an image (if 'image' intent).
             - Scrapes content from a URL (if 'scraper' intent).
             - Searches using DuckDuckGo (if 'search' intent).
             - Answers a general chat question (if 'chat' intent).
@@ -55,14 +56,14 @@ async def process_user_message(user_message: cl.Message) -> None:
             print('Your intent is: ', intent)
 
             await cl.Message(content="You've chosen to scrape link.\n Please hold on while I work on it!").send()
-            scraped_link = await scrape_web_async(url=user_message)
+            scraped_link = await scrape_link(user_message=user_message)
             # link_element = cl.File(name='Extracted link', path=str(scraped_link))
             
             await cl.Message(content=scraped_link).send()
             
         elif 'search' in intent:
             print('Your intent is: ', intent)
-                        
+            
             await cl.Message(content="Search on the Web Browser Selected!\n Please wait while I work on it!").send()
             search_results = await agent_results_text(user_message=user_message)
             search_link = await content_as_pdf(content=search_results)
@@ -114,8 +115,9 @@ async def process_user_message(user_message: cl.Message) -> None:
             #     # session_id=str(cl.user_session.id)  # Pass session ID for history tracking
             #     {"configurable": {"session_id": str(id(cl.user_session))}}  # Use object id as a unique identifier
             # )
-            print("\nQ-A Usage Metadata:")
-            print(f"{response.response_metadata}\n")
+            # print("\nQ-A Usage Metadata:")
+            # print(f"{response.response_metadata}\n")
+            print(f"\n {response}\n")
             answer = response["answer"]
             
             await cl.Message(content=answer).send()

@@ -46,14 +46,15 @@ async def process_pdf(file: cl.File) -> ConversationalRetrievalChain:
         An instance of the conversational retrieval chain created from the 
         extracted text.
     """
-    await cl.Message(content=f"Processing the PDF file: **`{file.name}`**... Please hold on!").send()
+    file_name = file.name
+    await cl.Message(content=f"Processing the PDF file: **`{file_name}`**... Please hold on!").send()
 
     pdf = PyPDF2.PdfReader(file.path)
     pdf_text = ""
     for page in pdf.pages:
         pdf_text += page.extract_text()
         
-    return await create_chain_retriever(texts=pdf_text, source_prefix="pdf")
+    return await create_chain_retriever(texts=pdf_text, source_prefix=file_name)
 
 
 async def process_word(file: cl.File) -> ConversationalRetrievalChain:
@@ -73,12 +74,13 @@ async def process_word(file: cl.File) -> ConversationalRetrievalChain:
     ConversationalRetrievalChain
         A conversational retrieval chain created from the document's text.
     """
-    await cl.Message(content=f"Processing the Word document: **`{file.name}`**... Please wait!").send()
+    file_name = file.name
+    await cl.Message(content=f"Processing the Word document: **`{file_name}`**... Please wait!").send()
     
     doc = docx.Document(file.path)
     doc_text = "\n".join([para.text for para in doc.paragraphs])
     
-    return await create_chain_retriever(texts=doc_text, source_prefix="docx")
+    return await create_chain_retriever(texts=doc_text, source_prefix=file_name)
 
 
 def prompt_func_img(data: dict) -> list:

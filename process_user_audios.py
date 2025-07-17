@@ -201,7 +201,7 @@ async def audio_answer(elements: list = None) -> None:
                 print('Your intent is: ', intent)
                 
                 await cl.Message(content="You've chosen to scrape link.\n Please hold on while I work on it!").send()
-                scraped_link = await scrape_web_async(url=transcription)
+                scraped_link = await scrape_link(user_message=transcription)
                 # link_element = cl.File(name='Extracted link', path=scraped_link)
                 
                 await cl.Message(content=scraped_link).send()
