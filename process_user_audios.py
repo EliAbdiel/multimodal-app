@@ -27,6 +27,7 @@ from process_user_files import handle_files_from_audio_message
 from topic_classifier import classify_intent
 from scrape_links import scrape_link, scrape_web_async
 from little_deepresearch import agent_results_text, content_as_pdf
+from process_user_message import intent_mapping
 # from search_duckduckgo_queries import agent_results_text
 # from process_text_to_speech import speak_async
 
@@ -125,22 +126,39 @@ async def process_audio() -> None:
     cl.user_session.set("audio_buffer", wav_buffer)
     cl.user_session.set("audio_mime_type", "audio/wav")
 
-    # audio_buffer = wav_buffer.getvalue()
 
-    # return audio_buffer
+class ObjectMessage:
+    """Represents a message object with a content attribute."""
+    __slots__ = ['content']
+    def __init__(self, content):
+        self.content = content 
 
-    # input_audio_el = cl.Audio(content=audio_buffer, mime="audio/wav")
+async def process_transcription_and_elements(transcription: str, elements: list = None) -> None:
+    """Processes the transcription and elements from an audio message."""
+    if not elements:
+        # Process without elements using intent classification
+        intent = await classify_intent(user_message=transcription)
+        print('Detected intent:', intent)
+        dummy_msg = ObjectMessage(transcription)
+        
+        for keyword, handler in intent_mapping.items():
+            if keyword in intent:
+                await handler(dummy_msg)
+                return
+        return
 
-    # whisper_input = ("audio.wav", audio_buffer, "audio/wav")
-    # transcription = await speech_to_text(audio_buffer)
+    # Process with elements using a chain retriever
+    chain = await create_chain_retriever(texts=transcription, source_prefix="text/plain")
+    await cl.Message(content=transcription, elements=elements).send()
 
-    # await cl.Message(
-    #     # author="You",
-    #     # type="user_message",
-    #     content=transcription,
-    #     # elements=[input_audio_el],
-    # ).send()
-
+    for file in elements:
+        if file.mime.startswith("image/"):
+            await handle_files_from_audio_message(elements=elements, user_message=transcription)
+        else:
+            cb = await handle_files_from_audio_message(elements=elements, user_message=transcription)
+            response = await chain.ainvoke(transcription, callbacks=[cb])
+            await cl.Message(content=response["answer"]).send()
+    
 
 async def audio_answer(elements: list = None) -> None:
     if elements is None:
@@ -154,65 +172,69 @@ async def audio_answer(elements: list = None) -> None:
         return
     
     try:
+        # Enhanced audio processing
         transcription = await speech_to_text(audio_file=audio_buffer)
     
         if not transcription:
             await cl.Message(content="Could not understand the audio. Please try speaking more clearly or check your microphone.").send()
             return
 
+        # Process transcription and elements
+        await process_transcription_and_elements(transcription, elements)
 
+        # Legacy code for handling intents (commented out)
         # Add confidence scoring
         # confidence_msg = "" if len(transcription) > 10 else " (Low confidence - please speak more clearly)"
         
-        chain = await create_chain_retriever(texts=transcription, source_prefix="text/plain")
+        # chain = await create_chain_retriever(texts=transcription, source_prefix="text/plain")
         
-        await cl.Message(content=transcription, elements=elements).send()
+        # await cl.Message(content=transcription, elements=elements).send()
         
-        if elements:           
+        # if elements:           
               
-            for file in elements:
+        #     for file in elements:
                 
-                if file.mime.startswith("image/"):
-                    await handle_files_from_audio_message(elements=elements, user_message=transcription)
+        #         if file.mime.startswith("image/"):
+        #             await handle_files_from_audio_message(elements=elements, user_message=transcription)
                 
-                else: 
-                    cb = await handle_files_from_audio_message(elements=elements, user_message=transcription) 
+        #         else: 
+        #             cb = await handle_files_from_audio_message(elements=elements, user_message=transcription) 
                     
-                    response = await chain.ainvoke(transcription, callbacks=[cb])
-                    answer = response["answer"]
+        #             response = await chain.ainvoke(transcription, callbacks=[cb])
+        #             answer = response["answer"]
                     
-                    await cl.Message(content=answer).send()
-                    # await speak_async(answer=answer)
+        #             await cl.Message(content=answer).send()
+        #             # await speak_async(answer=answer)
                        
-        else:
-            intent = await classify_intent(user_message=transcription)
+        # else:
+        #     intent = await classify_intent(user_message=transcription)
 
-            if 'image' in intent:
-                print('Your intent is: ', intent)
+        #     if 'image' in intent:
+        #         print('Your intent is: ', intent)
                 
-                await cl.Message(content="Image Generation Selected! \n You've chosen to generate an image.").send()
+        #         await cl.Message(content="Image Generation Selected! \n You've chosen to generate an image.").send()
                 
-                generated_image_path = await generate_image(user_message=transcription)
-                image_element = cl.Image(name="Generated Image", path=generated_image_path)
+        #         generated_image_path = await generate_image(user_message=transcription)
+        #         image_element = cl.Image(name="Generated Image", path=generated_image_path)
                 
-                await cl.Message(content="Here you go! \n Here's the generated image!", elements=[image_element]).send()
+        #         await cl.Message(content="Here you go! \n Here's the generated image!", elements=[image_element]).send()
             
-            elif 'scraper' in intent:
-                print('Your intent is: ', intent)
+        #     elif 'scraper' in intent:
+        #         print('Your intent is: ', intent)
                 
-                await cl.Message(content="You've chosen to scrape link.\n Please hold on while I work on it!").send()
-                scraped_link = await scrape_link(user_message=transcription)
-                # link_element = cl.File(name='Extracted link', path=scraped_link)
+        #         await cl.Message(content="You've chosen to scrape link.\n Please hold on while I work on it!").send()
+        #         scraped_link = await scrape_link(user_message=transcription)
+        #         # link_element = cl.File(name='Extracted link', path=scraped_link)
                 
-                await cl.Message(content=scraped_link).send()
+        #         await cl.Message(content=scraped_link).send()
  
-            elif 'search' in intent:
-                print('Your intent is: ', intent)
+        #     elif 'search' in intent:
+        #         print('Your intent is: ', intent)
                                 
-                await cl.Message(content="Search on the Web Browser Selected!\n Please wait while I work on it!").send()
-                search_results = await agent_results_text(user_message=transcription)
-                search_link = await content_as_pdf(content=search_results)
-                pdf_element = cl.Pdf(name="research_report", path=str(search_link))
+        #         await cl.Message(content="Search on the Web Browser Selected!\n Please wait while I work on it!").send()
+        #         search_results = await agent_results_text(user_message=transcription)
+        #         search_link = await content_as_pdf(content=search_results)
+        #         pdf_element = cl.Pdf(name="research_report", path=str(search_link))
                 
                 # formatted_results = ""
                 # for index, result in enumerate(search_results[:5], start=1):  
@@ -221,22 +243,22 @@ async def audio_answer(elements: list = None) -> None:
                 #     body = result['body']
                 #     formatted_results += f"{index}. **Title:** {title}\n**Link:** {href}\n**Description:** {body}\n\n"
                 
-                await cl.Message(content=search_results, elements=[pdf_element]).send()
+            #     await cl.Message(content=search_results, elements=[pdf_element]).send()
                                 
-            elif 'chat' in intent:
-                print('Your intent is: ', intent)
+            # elif 'chat' in intent:
+            #     print('Your intent is: ', intent)
                 
-                model = ChatGoogleGenerativeAI(
-                            model=os.environ["GEMINI_MODEL"],
-                            google_api_key=os.environ["GEMINI_API_KEY"],
-                            temperature=0.5,
-                        )
-                answer = await model.ainvoke(transcription)
+            #     model = ChatGoogleGenerativeAI(
+            #                 model=os.environ["GEMINI_MODEL"],
+            #                 google_api_key=os.environ["GEMINI_API_KEY"],
+            #                 temperature=0.5,
+            #             )
+            #     answer = await model.ainvoke(transcription)
 
-                print("\nSpeech Usage Metadata:")
-                print(answer.usage_metadata)
+            #     print("\nSpeech Usage Metadata:")
+            #     print(answer.usage_metadata)
                 
-                await cl.Message(content=answer.content).send()  
+            #     await cl.Message(content=answer.content).send()  
                 # await speak_async(answer=answer.content) 
 
     except sr.UnknownValueError:

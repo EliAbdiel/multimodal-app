@@ -8,6 +8,7 @@ from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
 # from chainlit.data.storage_clients.azure import AzureStorageClient
 from chainlit.data.storage_clients.azure_blob import AzureBlobStorageClient
 # from azure.identity import ClientSecretCredential
+from commands import command_list
 from process_user_files import handle_attachment
 from process_user_message import process_user_message
 from process_user_audios import process_audio_chunk, audio_answer
@@ -38,6 +39,10 @@ async def on_chat_start():
         cl.user_session.set("chain", None)
         cl.user_session.set("audio_buffer", None)
         cl.user_session.set("audio_mime_type", None)
+
+        commands = await command_list()
+
+        await cl.context.emitter.set_commands(commands)
         
         # await cl.Message(content="Welcome! I'm your multimodal AI assistant. You can send me text, audio, images, PDFs, or Word documents!").send()
         
